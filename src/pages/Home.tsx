@@ -6,6 +6,7 @@ import PostCard from "@/components/PostCard";
 import CreatePostCard from "@/components/CreatePostCard";
 import UserProfile from "@/components/UserProfile";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { users } from "@/lib/data";
 import { useNavigate } from "react-router-dom";
 
