@@ -9,12 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { users } from "@/lib/data";
 import { useNavigate } from "react-router-dom";
+import { adaptPostToUIFormat, adaptUserToUIFormat } from "@/lib/adapters";
+import { getPostComments } from "@/lib/db";
 
 const Home = () => {
   const { isAuthenticated, currentUser } = useAuth();
   const { posts } = useSocial();
   const navigate = useNavigate();
   const [suggestedUsers, setSuggestedUsers] = useState(users.slice(0, 3));
+
+  // Transform DBUser to User for UI components
+  const adaptedUser = currentUser ? adaptUserToUIFormat(currentUser, 0, 0) : null;
 
   useEffect(() => {
     if (currentUser) {
@@ -36,7 +41,7 @@ const Home = () => {
                 <CreatePostCard />
                 <div>
                   {posts.map((post) => (
-                    <PostCard key={post.id} post={post} />
+                    <PostCard key={post.id} post={adaptPostToUIFormat(post)} />
                   ))}
                 </div>
               </>
@@ -66,8 +71,8 @@ const Home = () => {
           
           {/* Sidebar */}
           <div className="hidden md:block">
-            {isAuthenticated && currentUser && (
-              <UserProfile user={currentUser} isCurrentUser={true} />
+            {isAuthenticated && adaptedUser && (
+              <UserProfile user={adaptedUser} isCurrentUser={true} />
             )}
             
             <div className="mt-6">

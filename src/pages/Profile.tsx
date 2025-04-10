@@ -5,6 +5,7 @@ import PostCard from "@/components/PostCard";
 import UserProfile from "@/components/UserProfile";
 import CreatePostCard from "@/components/CreatePostCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { adaptPostToUIFormat, adaptUserToUIFormat } from "@/lib/adapters";
 
 const Profile = () => {
   const { posts } = useSocial();
@@ -14,8 +15,11 @@ const Profile = () => {
     return <div>Loading...</div>;
   }
 
-  // Get posts by the current user
-  const userPosts = posts.filter((post) => post.userId === currentUser.id);
+  // Transform currentUser to User type for UserProfile component
+  const adaptedUser = adaptUserToUIFormat(currentUser, 0, 0);
+
+  // Get posts by the current user - use user_id from PostDetails (DB type)
+  const userPosts = posts.filter((post) => post.user_id === currentUser.id);
 
   return (
     <div className="pt-20 pb-10">
@@ -23,7 +27,7 @@ const Profile = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Sidebar */}
           <div className="md:col-span-1">
-            <UserProfile user={currentUser} isCurrentUser={true} />
+            <UserProfile user={adaptedUser} isCurrentUser={true} />
           </div>
 
           {/* Main content */}
@@ -43,7 +47,7 @@ const Profile = () => {
                   </div>
                 ) : (
                   userPosts.map((post) => (
-                    <PostCard key={post.id} post={post} />
+                    <PostCard key={post.id} post={adaptPostToUIFormat(post)} />
                   ))
                 )}
               </TabsContent>

@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { PostDetails, CommentWithUser } from "@/lib/db-types";
-import { getPosts, createPost, toggleLike, addComment, getPostComments } from "@/lib/db";
+import { getPosts, createPost, toggleLike, addComment as dbAddComment, getPostComments } from "@/lib/db";
 import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
 
@@ -94,7 +94,7 @@ export const SocialProvider = ({ children }: SocialProviderProps) => {
     }
 
     try {
-      await addComment(currentUser.id, postId, content);
+      await dbAddComment(currentUser.id, postId, content);
       toast.success('Comment added!');
       
       // Update the comments count in posts
