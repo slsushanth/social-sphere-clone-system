@@ -1,11 +1,11 @@
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import { User } from "@/lib/types";
-import { users } from "@/lib/data";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { DBUser } from "@/lib/db-types";
+import { loginUser, registerUser } from "@/lib/db";
 import { toast } from "sonner";
 
 interface AuthContextType {
-  currentUser: User | null;
+  currentUser: DBUser | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, username: string, password: string) => Promise<boolean>;
@@ -19,17 +19,32 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<DBUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Check for saved user on mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('currentUser');
+      }
+    }
+  }, []);
+
   const login = async (email: string, password: string): Promise<boolean> => {
-    // For demo purposes, we'll use mock data and accept any password
     try {
-      const user = users.find((u) => u.email === email);
+      const user = await loginUser(email, password);
       
       if (user) {
         setCurrentUser(user);
         setIsAuthenticated(true);
+        localStorage.setItem('currentUser', JSON.stringify(user));
         toast.success("Logged in successfully!");
         return true;
       } else {
@@ -48,34 +63,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     username: string,
     password: string
   ): Promise<boolean> => {
-    // For demo purposes, we'll just pretend to register
     try {
-      const existingUser = users.find(
-        (u) => u.email === email || u.username === username
-      );
+      const user = await registerUser(name, email, username, password);
       
-      if (existingUser) {
-        toast.error("Email or username already exists");
+      if (user) {
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        toast.success("Registered successfully!");
+        return true;
+      } else {
         return false;
       }
-
-      // In a real app, we would create a new user in the database
-      const newUser: User = {
-        id: (users.length + 1).toString(),
-        name,
-        username,
-        email,
-        avatar: `https://i.pravatar.cc/150?img=${users.length + 4}`,
-        bio: "",
-        followers: 0,
-        following: 0,
-      };
-      
-      users.push(newUser);
-      setCurrentUser(newUser);
-      setIsAuthenticated(true);
-      toast.success("Registered successfully!");
-      return true;
     } catch (error) {
       toast.error("Registration failed");
       return false;
@@ -85,6 +84,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = () => {
     setCurrentUser(null);
     setIsAuthenticated(false);
+    localStorage.removeItem('currentUser');
     toast.success("Logged out successfully");
   };
 
