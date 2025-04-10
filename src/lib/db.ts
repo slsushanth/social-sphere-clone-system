@@ -1,4 +1,5 @@
-import { initializeDatabase, query, generateUUID, mockDatabase } from './mysql';
+
+import { initializeDatabase, query, generateUUID } from './mysql';
 import { DBUser, DBPost, DBComment, PostDetails, UserStats, UserWithStats, CommentWithUser } from './db-types';
 import { toast } from 'sonner';
 
@@ -14,9 +15,8 @@ export async function getCurrentUser(userId?: string): Promise<DBUser | null> {
   
   try {
     if (isBrowser) {
-      // Mock implementation for browser
-      const user = mockDatabase.users.find(u => u.id === userId);
-      return user || null;
+      console.warn('Database operations cannot be performed in browser environment');
+      return null;
     } else {
       const users = await query<DBUser[]>(
         'SELECT * FROM users WHERE id = ?',
@@ -34,18 +34,8 @@ export async function getCurrentUser(userId?: string): Promise<DBUser | null> {
 export async function getUserProfile(username: string): Promise<UserWithStats | null> {
   try {
     if (isBrowser) {
-      // Mock implementation for browser
-      const user = mockDatabase.users.find(u => u.username === username);
-      if (!user) return null;
-      
-      const followersCount = mockDatabase.followers.filter(f => f.following_id === user.id).length;
-      const followingCount = mockDatabase.followers.filter(f => f.follower_id === user.id).length;
-      
-      return {
-        ...user,
-        followers_count: followersCount,
-        following_count: followingCount
-      };
+      console.warn('Database operations cannot be performed in browser environment');
+      return null;
     } else {
       // Get user
       const users = await query<DBUser[]>(
@@ -85,30 +75,8 @@ export async function getUserProfile(username: string): Promise<UserWithStats | 
 export async function getPosts(currentUserId?: string): Promise<PostDetails[]> {
   try {
     if (isBrowser) {
-      // Mock implementation for browser
-      const posts = mockDatabase.posts.map(post => {
-        const user = mockDatabase.users.find(u => u.id === post.user_id) || { name: 'Unknown', username: 'unknown', avatar: null };
-        const likesCount = mockDatabase.likes.filter(like => like.post_id === post.id).length;
-        const commentsCount = mockDatabase.comments.filter(comment => comment.post_id === post.id).length;
-        const isLiked = currentUserId ? mockDatabase.likes.some(like => like.post_id === post.id && like.user_id === currentUserId) : false;
-        
-        return {
-          id: post.id,
-          content: post.content,
-          image: post.image,
-          created_at: post.created_at,
-          user_id: post.user_id,
-          user_name: user.name,
-          user_username: user.username,
-          user_avatar: user.avatar,
-          likes_count: likesCount,
-          comments_count: commentsCount,
-          isLiked: isLiked
-        };
-      });
-      
-      // Sort by created_at in descending order
-      return posts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      console.warn('Database operations cannot be performed in browser environment');
+      return [];
     } else {
       const posts = await query<PostDetails[]>('SELECT * FROM post_details');
     
@@ -140,9 +108,8 @@ export async function getPosts(currentUserId?: string): Promise<PostDetails[]> {
 export async function getUserPosts(userId: string, currentUserId?: string): Promise<PostDetails[]> {
   try {
     if (isBrowser) {
-      // Filter posts by user ID from the mockDatabase
-      const userPosts = await getPosts(currentUserId);
-      return userPosts.filter(post => post.user_id === userId);
+      console.warn('Database operations cannot be performed in browser environment');
+      return [];
     } else {
       const posts = await query<PostDetails[]>(
         'SELECT * FROM post_details WHERE user_id = ?',
@@ -182,18 +149,8 @@ export async function createPost(userId: string, content: string, image?: string
   
   try {
     if (isBrowser) {
-      const postId = generateUUID();
-      const newPost = {
-        id: postId,
-        user_id: userId,
-        content,
-        image: image || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      mockDatabase.posts.push(newPost);
-      return newPost;
+      console.warn('Database operations cannot be performed in browser environment');
+      return null;
     } else {
       const postId = generateUUID();
       await query(
@@ -219,24 +176,8 @@ export async function createPost(userId: string, content: string, image?: string
 export async function getPostComments(postId: string): Promise<CommentWithUser[]> {
   try {
     if (isBrowser) {
-      const comments = mockDatabase.comments
-        .filter(comment => comment.post_id === postId)
-        .map(comment => {
-          const user = mockDatabase.users.find(u => u.id === comment.user_id) || { name: 'Unknown', avatar: null, username: 'unknown' };
-          
-          return {
-            id: comment.id,
-            postId: comment.post_id,
-            userId: comment.user_id,
-            userName: user.name,
-            userAvatar: user.avatar,
-            content: comment.content,
-            createdAt: comment.created_at
-          };
-        });
-      
-      // Sort by created_at in ascending order
-      return comments.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      console.warn('Database operations cannot be performed in browser environment');
+      return [];
     } else {
       const comments = await query<any[]>(
         `SELECT c.*, u.name as user_name, u.avatar as user_avatar, u.username as user_username
@@ -271,18 +212,8 @@ export async function addComment(userId: string, postId: string, content: string
   
   try {
     if (isBrowser) {
-      const commentId = generateUUID();
-      const newComment = {
-        id: commentId,
-        post_id: postId,
-        user_id: userId,
-        content,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      mockDatabase.comments.push(newComment);
-      return newComment;
+      console.warn('Database operations cannot be performed in browser environment');
+      return null;
     } else {
       const commentId = generateUUID();
       await query(
@@ -313,25 +244,8 @@ export async function toggleLike(userId: string, postId: string): Promise<boolea
   
   try {
     if (isBrowser) {
-      // Check if the user already liked the post
-      const existingLike = mockDatabase.likes.find(like => like.post_id === postId && like.user_id === userId);
-      
-      if (existingLike) {
-        // Unlike the post
-        const index = mockDatabase.likes.indexOf(existingLike);
-        mockDatabase.likes.splice(index, 1);
-        return false; // No longer liked
-      } else {
-        // Like the post
-        const likeId = generateUUID();
-        mockDatabase.likes.push({
-          id: likeId,
-          post_id: postId,
-          user_id: userId,
-          created_at: new Date().toISOString()
-        });
-        return true; // Now liked
-      }
+      console.warn('Database operations cannot be performed in browser environment');
+      return false;
     } else {
       // Check if the user already liked the post
       const likes = await query<any[]>(
@@ -377,27 +291,8 @@ export async function toggleFollow(currentUserId: string, userId: string): Promi
   
   try {
     if (isBrowser) {
-      // Check if already following
-      const existingFollow = mockDatabase.followers.find(
-        f => f.follower_id === currentUserId && f.following_id === userId
-      );
-      
-      if (existingFollow) {
-        // Unfollow
-        const index = mockDatabase.followers.indexOf(existingFollow);
-        mockDatabase.followers.splice(index, 1);
-        return false; // No longer following
-      } else {
-        // Follow
-        const followId = generateUUID();
-        mockDatabase.followers.push({
-          id: followId,
-          follower_id: currentUserId,
-          following_id: userId,
-          created_at: new Date().toISOString()
-        });
-        return true; // Now following
-      }
+      console.warn('Database operations cannot be performed in browser environment');
+      return false;
     } else {
       // Check if already following
       const followers = await query<any[]>(
@@ -434,9 +329,8 @@ export async function isFollowing(currentUserId: string, userId: string): Promis
   
   try {
     if (isBrowser) {
-      return mockDatabase.followers.some(
-        f => f.follower_id === currentUserId && f.following_id === userId
-      );
+      console.warn('Database operations cannot be performed in browser environment');
+      return false;
     } else {
       const followers = await query<any[]>(
         'SELECT * FROM followers WHERE follower_id = ? AND following_id = ?',
@@ -454,32 +348,8 @@ export async function isFollowing(currentUserId: string, userId: string): Promis
 export async function getSuggestedUsers(currentUserId?: string, limit = 5): Promise<Partial<DBUser>[]> {
   try {
     if (isBrowser) {
-      if (!currentUserId) {
-        // If not logged in, just get some random users
-        return mockDatabase.users.slice(0, limit).map(user => ({
-          id: user.id,
-          name: user.name,
-          username: user.username,
-          avatar: user.avatar
-        }));
-      }
-      
-      // Get users that the current user is not following
-      const following = mockDatabase.followers
-        .filter(f => f.follower_id === currentUserId)
-        .map(f => f.following_id);
-      
-      const suggestedUsers = mockDatabase.users
-        .filter(user => user.id !== currentUserId && !following.includes(user.id))
-        .slice(0, limit)
-        .map(user => ({
-          id: user.id,
-          name: user.name,
-          username: user.username,
-          avatar: user.avatar
-        }));
-      
-      return suggestedUsers;
+      console.warn('Database operations cannot be performed in browser environment');
+      return [];
     } else {
       if (!currentUserId) {
         // If not logged in, just get some random users
@@ -512,16 +382,8 @@ export async function getSuggestedUsers(currentUserId?: string, limit = 5): Prom
 export async function loginUser(email: string, password: string): Promise<DBUser | null> {
   try {
     if (isBrowser) {
-      // For demo purposes, find a user with the matching email
-      const user = mockDatabase.users.find(user => user.email === email);
-      
-      if (!user) {
-        toast.error('Invalid email or password');
-        return null;
-      }
-      
-      // For demo purposes, we'll accept any password for our sample users
-      return user;
+      console.warn('Database operations cannot be performed in browser environment');
+      return null;
     } else {
       // In a real app, you'd hash the password and compare with stored hash
       const users = await query<DBUser[]>(
@@ -552,32 +414,8 @@ export async function registerUser(
 ): Promise<DBUser | null> {
   try {
     if (isBrowser) {
-      // Check if user exists
-      const existingUser = mockDatabase.users.find(user => user.email === email || user.username === username);
-      
-      if (existingUser) {
-        toast.error('Email or username already exists');
-        return null;
-      }
-      
-      // Create new user
-      const userId = generateUUID();
-      const avatar = `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`;
-      
-      const newUser = {
-        id: userId,
-        name,
-        username,
-        email,
-        avatar,
-        bio: null,
-        password_hash: password, // This should be hashed in production
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      mockDatabase.users.push(newUser);
-      return newUser;
+      console.warn('Database operations cannot be performed in browser environment');
+      return null;
     } else {
       // Check if user exists
       const existingUsers = await query<DBUser[]>(
