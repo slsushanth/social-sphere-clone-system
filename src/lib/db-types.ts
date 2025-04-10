@@ -53,9 +53,25 @@ export interface PostDetails {
   user_avatar: string | null;
   likes_count: number;
   comments_count: number;
+  isLiked?: boolean;
 }
 
 export interface UserStats {
+  followers_count: number;
+  following_count: number;
+}
+
+export interface CommentWithUser {
+  id: string;
+  postId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string | null;
+  content: string;
+  createdAt: string;
+}
+
+export interface UserWithStats extends DBUser {
   followers_count: number;
   following_count: number;
 }
